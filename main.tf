@@ -25,7 +25,7 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-resource "aws_instance" "lab-app-terraform-aws-network" {
+resource "aws_instance" "app" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
 
@@ -34,6 +34,11 @@ resource "aws_instance" "lab-app-terraform-aws-network" {
   vpc_security_group_ids = [
     aws_security_group.app.id
   ]
+
+  key_name = aws_key_pair.app.key_name
+
+  user_data                   = file("${path.module}/assets/cloud_init.yaml")
+  user_data_replace_on_change = true
 
   tags = {
     Name = "lab-terraform-aws-network"
@@ -50,6 +55,15 @@ resource "aws_security_group" "app" {
   }
 }
 
+resource "aws_vpc_security_group_ingress_rule" "http" {
+  security_group_id = aws_security_group.app.id
+
+  ip_protocol = "tcp"
+  from_port   = 80
+  to_port     = 80
+  cidr_ipv4   = "0.0.0.0/0"
+}
+
 resource "aws_vpc_security_group_ingress_rule" "ssh" {
   security_group_id = aws_security_group.app.id
 
@@ -64,5 +78,10 @@ resource "aws_vpc_security_group_egress_rule" "all" {
   security_group_id = aws_security_group.app.id
 
   ip_protocol = "-1"
-  cidr_ipv4   = "0.0.0.0/0"
+  cidr_ipv4 = "0.0.0.0/0"
+}
+
+resource "aws_key_pair" "app" {
+  key_name   = "terraform-lab"
+  public_key = file("./keys/aws_key.pub")
 }

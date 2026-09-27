@@ -1,0 +1,10 @@
+#cloud-config
+
+package_update: true
+
+packages:
+  - python3
+  - python3-apt
+
+runcmd:
+  - echo "cloud-init completed" > /tmp/cloud-init-ready
